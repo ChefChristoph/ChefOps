@@ -1,0 +1,58 @@
+CREATE TABLE ingredients (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT NOT NULL UNIQUE,
+    unit            TEXT NOT NULL,          -- e.g. kg, l, piece
+    cost_per_unit   REAL NOT NULL,          -- cost per 1 unit
+    notes           TEXT
+);
+CREATE TABLE recipes (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT NOT NULL UNIQUE,
+    yield_qty       REAL,                   -- e.g. 10 (kg, l, portions...)
+    yield_unit      TEXT,                   -- e.g. kg, l, portion
+    notes           TEXT
+, secondary_yield_qty REAL, secondary_yield_unit TEXT);
+CREATE TABLE recipe_items (
+    id              INTEGER PRIMARY KEY,
+    recipe_id       INTEGER NOT NULL,
+    ingredient_id   INTEGER NOT NULL,
+    qty             REAL NOT NULL,          -- in ingredient.unit
+    notes           TEXT,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE RESTRICT
+);
+CREATE INDEX idx_recipe_items_recipe
+    ON recipe_items (recipe_id);
+CREATE INDEX idx_recipe_items_ingredient
+    ON recipe_items (ingredient_id);
+CREATE VIEW market_list AS
+SELECT
+    i.id AS ingredient_id,
+    i.name AS ingredient_name,
+    i.unit,
+    SUM(ri.qty) AS total_qty_needed,
+    i.cost_per_unit,
+    SUM(ri.qty) * i.cost_per_unit AS estimated_cost
+FROM recipe_items ri
+JOIN ingredients i ON i.id = ri.ingredient_id
+GROUP BY i.id, i.name, i.unit, i.cost_per_unit
+ORDER BY i.name
+/* market_list(ingredient_id,ingredient_name,unit,total_qty_needed,cost_per_unit,estimated_cost) */;
+CREATE TABLE ingredient_conversions (
+    id INTEGER PRIMARY KEY,
+    ingredient_id INTEGER NOT NULL,
+    from_unit TEXT NOT NULL,
+    from_qty REAL NOT NULL,
+    to_unit TEXT NOT NULL,
+    to_qty REAL NOT NULL,
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
+);
+CREATE TABLE recipe_subrecipes (
+    id INTEGER PRIMARY KEY,
+    recipe_id INTEGER NOT NULL,
+    subrecipe_id INTEGER NOT NULL,
+    qty REAL NOT NULL,                -- e.g. 3.5 (kg, g, piece, etc.)
+    unit TEXT NOT NULL,               -- the unit of the qty
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (subrecipe_id) REFERENCES recipes(id) ON DELETE RESTRICT
+);
