@@ -69,6 +69,7 @@ func parseExportFlags(args []string) (exportOptions, []string) {
 
 	return opts, positional
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 // EXPORT RECIPE
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,7 +115,7 @@ func exportRecipe(args []string) {
 
 	rows, err := db.Query(`
 		SELECT item_type, ingredient_name, qty, ingredient_unit, line_cost
-		FROM recipe_items_expanded
+		FROM recipe_items_expanded_detail_export
 		WHERE recipe_name = ?
 		ORDER BY item_type, ingredient_name
 	`, recipeName)
@@ -208,7 +209,7 @@ func exportMarketlist(args []string) {
 	defer db.Close()
 
 	rows, err := db.Query(`
-		SELECT ingredient_name, total_qty_needed, unit, cost_per_unit, estimated_cost
+		SELECT ingredient_name, total_qty, unit, cost_per_unit, total_cost
 		FROM market_list
 		ORDER BY ingredient_name
 	`)
@@ -316,7 +317,7 @@ func exportFullReport(args []string) {
 
 		r2, _ := db.Query(`
 			SELECT item_type, ingredient_name, qty, ingredient_unit, line_cost
-			FROM recipe_items_expanded
+			FROM recipe_items_expanded_detail_export
 			WHERE recipe_name = ?
 		`, name)
 
@@ -383,4 +384,3 @@ func writeOutput(outfile, content string) {
 
 	fmt.Println("Saved:", outfile)
 }
-

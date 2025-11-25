@@ -62,9 +62,49 @@ WITH RECURSIVE expand(recipe_id, ingredient_id, qty) AS (
     JOIN expand ex ON ex.recipe_id = rs.subrecipe_id
     JOIN recipe_items ri2 ON ri2.recipe_id = rs.subrecipe_id
 )
-SELECT recipe_id, ingredient_id, SUM(qty) AS total_qty
+SELECT 
+    recipe_id, 
+    ingredient_id, 
+    SUM(qty) AS total_qty
 FROM expand
 GROUP BY recipe_id, ingredient_id;
+
+------------------------------------------------------------
+-- VIEW 2.5: EXPANDED RECIPE ITEMS WITH DETAIL (for export)
+------------------------------------------------------------
+DROP VIEW IF EXISTS recipe_items_expanded_detail_export;
+
+CREATE VIEW recipe_items_expanded_detail_export AS
+SELECT 
+    r.name AS recipe_name,
+    'ingredient' AS item_type,
+    ing.name AS ingredient_name,
+    COALESCE(exp.total_qty, ri.qty) AS qty,
+    ing.unit AS ingredient_unit,
+    COALESCE(exp.total_qty, ri.qty) * ing.cost_per_unit AS line_cost
+FROM recipes r
+LEFT JOIN recipe_items ri ON r.id = ri.recipe_id
+LEFT JOIN ingredients ing ON ri.ingredient_id = ing.id
+LEFT JOIN recipe_items_expanded exp ON r.id = exp.recipe_id AND ing.id = exp.ingredient_id
+
+UNION ALL
+
+SELECT 
+    r.name AS recipe_name,
+    'subrecipe' AS item_type,
+    sub.name AS ingredient_name,
+    rs.qty AS qty,
+    sub.yield_unit AS ingredient_unit,
+    rs.qty * (
+        SELECT SUM(ri2.qty * ing2.cost_per_unit)
+        FROM recipe_items ri2
+        JOIN ingredients ing2 ON ing2.id = ri2.ingredient_id
+        WHERE ri2.recipe_id = sub.id
+    ) / sub.yield_qty AS line_cost
+FROM recipes r
+LEFT JOIN recipe_subrecipes rs ON r.id = rs.recipe_id
+LEFT JOIN recipes sub ON sub.id = rs.subrecipe_id
+WHERE sub.id IS NOT NULL;
 
 ------------------------------------------------------------
 -- VIEW 3: EXPANDED DETAIL VIEW (for scaling & export)
