@@ -9,16 +9,31 @@ import (
 
 	"github.com/ChefChristoph/chefops/internal"
 )
-
 func usage() {
-	fmt.Println("ChefOps CLI")
-	fmt.Println("Usage:")
-	fmt.Println("  chefops ingredient add   --name NAME --unit UNIT --cost COST")
-	fmt.Println("  chefops ingredient list")
-	// later:
-	// fmt.Println("  chefops recipe new ...")
-	// fmt.Println("  chefops recipe add-item ...")
-	// fmt.Println("  chefops recipe cost ...")
+	    fmt.Println("ChefOps CLI")
+    fmt.Println("")
+    fmt.Println("Usage:")
+    fmt.Println("  chefops ingredient add        --name NAME --unit UNIT --cost COST")
+    fmt.Println("  chefops ingredient list")
+    fmt.Println("")
+    fmt.Println("  chefops recipe new            --name NAME --yield QTY --unit UNIT [--syield QTY --sunit UNIT]")
+    fmt.Println("  chefops recipe list")
+    fmt.Println("  chefops recipe show           \"RECIPE NAME\"")
+    fmt.Println("  chefops recipe cost           \"RECIPE NAME\"")
+    fmt.Println("  chefops recipe add-item       --recipe NAME --ingredient NAME --qty QTY")
+    fmt.Println("  chefops recipe add-subrecipe  --recipe NAME --sub NAME --qty QTY --unit UNIT")
+    fmt.Println("  chefops recipe scale          \"RECIPE NAME\" --qty QTY --unit UNIT")
+    fmt.Println("")
+    fmt.Println("  chefops forecast              \"DISH NAME\" --portions N")
+    fmt.Println("")
+    fmt.Println("  chefops marketlist")
+    fmt.Println("")
+    fmt.Println("Examples:")
+    fmt.Println("  chefops recipe show \"BULK Batter\"")
+    fmt.Println("  chefops recipe cost \"DISH Turbo Hammour Popcorn\"")
+    fmt.Println("  chefops recipe scale \"BULK Batter\" --qty 8 --unit kg")
+    fmt.Println("  chefops forecast \"DISH Pole Position Burger\" --portions 120")
+
 	os.Exit(1)
 }
 
@@ -73,15 +88,19 @@ func main() {
     recipeAddSubrecipe(os.Args[3:])
 case "remove-subrecipe":
     recipeRemoveSubrecipe(os.Args[3:])
+		case "scale":
+    recipeScale(os.Args[3:])
 		default:
 			usage()
 		}
-
+  // FORECAST COMMANDS
+	case "forecast":
+    forecastCommand(os.Args[2:])
 	// -------------------------
   // MARKETLIST COMMANDS
 	// -------------------------
 	case "marketlist":
-	marketList(os.Args[2:])
+	marketlist(os.Args[2:])
 
   // -------------------------
   // export COMMANDS

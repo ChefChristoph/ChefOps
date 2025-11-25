@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"text/tabwriter"
   "strconv"
 	"strings"
 	"database/sql"
@@ -51,7 +50,7 @@ func recipeNew(args []string) {
 	}
 	fmt.Println(")")
 }
-
+// recipeList start
 func recipeList(args []string) {
 	fs := flag.NewFlagSet("recipe list", flag.ExitOnError)
 	fs.Parse(args)
@@ -66,18 +65,19 @@ func recipeList(args []string) {
 	}
 	defer rows.Close()
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "ID\tNAME\tYIELD\tUNIT")
+	// Clean, copy-safe output
+	fmt.Printf("%-4s %-45s %-7s %s\n", "ID", "NAME", "YIELD", "UNIT")
 	for rows.Next() {
 		var id int
 		var name, unit string
 		var qty float64
 		rows.Scan(&id, &name, &qty, &unit)
-		fmt.Fprintf(w, "%d\t%s\t%.2f\t%s\n", id, name, qty, unit)
-	}
-	w.Flush()
-}
 
+		// Left-align name but without trailing padding
+		fmt.Printf("%-4d %-45s %-7.2f %s\n", id, name, qty, unit)
+	}
+}
+// recipeList end
 func recipeAddItem(args []string) {
 	fs := flag.NewFlagSet("recipe add-item", flag.ExitOnError)
 	recipeName := fs.String("recipe", "", "recipe name")
@@ -300,31 +300,31 @@ func recipeShow(args []string) {
         os.Exit(1)
     }
 
-    name := args[0]
-
+    raw := strings.Join(args, " ")
     db, _ := internal.OpenDB()
     defer db.Close()
 
-    // Get recipe ID (optional but used earlier)
-    var recipeID int
-    err := db.QueryRow(`SELECT id FROM recipes WHERE name = ?`, name).Scan(&recipeID)
+    recipeID, recipeName, err := findRecipeByName(db, raw)
     if err != nil {
-        fmt.Println("recipe not found:", name)
+        if err == sql.ErrNoRows {
+            fmt.Println("recipe not found:", raw)
+            os.Exit(1)
+        }
+        fmt.Println("error finding recipe:", err)
         os.Exit(1)
     }
 
-    fmt.Printf("\nRecipe: %s\n", name)
+    fmt.Printf("\nRecipe: %s\n", recipeName)
     fmt.Println("-----------------------------------")
     fmt.Println("| Type       | Name               | Qty     | Unit | Line cost |")
     fmt.Println("|------------|--------------------|---------|------|-----------|")
 
     rows, err := db.Query(`
-        SELECT item_type, ingredient_name, qty, ingredient_unit, line_cost
-        FROM recipe_items_expanded
-        WHERE recipe_name = ?
-        ORDER BY item_type, ingredient_name
-    `, name)
-
+        SELECT type, name, qty, unit, line_cost
+        FROM recipe_raw_lines
+        WHERE recipe_id = ?
+        ORDER BY type, name;
+    `, recipeID)
     if err != nil {
         fmt.Println("error loading recipe:", err)
         return
@@ -348,37 +348,57 @@ func recipeShow(args []string) {
 
     fmt.Println()
 }
-
 // func recipeShow end
+// func recipeCost start
 func recipeCost(args []string) {
     if len(args) == 0 {
         fmt.Println("usage: chefops recipe cost NAME")
         os.Exit(1)
     }
 
-    name := args[0]
+    raw := strings.Join(args, " ")
 
     db, _ := internal.OpenDB()
     defer db.Close()
 
-    const q = `
-    SELECT recipe_name, yield_qty, yield_unit,
-           secondary_yield_qty, secondary_yield_unit,
-           total_cost, cost_per_yield_unit, cost_per_secondary_unit
-    FROM recipe_totals
-    WHERE recipe_name = ?
+    recipeID, recipeName, err := findRecipeByName(db, raw)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            fmt.Println("recipe not found:", raw)
+            os.Exit(1)
+        }
+        fmt.Println("error finding recipe:", err)
+        os.Exit(1)
+    }
+
+    _ = recipeID   // silence unused var; we'll use this later in forecasting
+const q = `
+        SELECT
+            recipe_name,
+            yield_qty,
+            yield_unit,
+            secondary_yield_qty,
+            secondary_yield_unit,
+            total_cost,
+            cost_per_yield_unit,
+            cost_per_secondary_unit
+        FROM recipe_totals
+        WHERE recipe_name = ?
     `
 
-    var recipeName, unit, secUnit string
-    var yield, secYield, total, perUnit float64
-    var perSecUnit sql.NullFloat64
+    var unit, secUnit string
+    var yield, secYield, total, perYield float64
+    var perSecYield sql.NullFloat64
 
-    err := db.QueryRow(q, name).Scan(
+    err = db.QueryRow(q, recipeName).Scan(
         &recipeName,
-        &yield, &unit,
-        &secYield, &secUnit,
-        &total, &perUnit,
-        &perSecUnit,
+        &yield,
+        &unit,
+        &secYield,
+        &secUnit,
+        &total,
+        &perYield,
+        &perSecYield,
     )
     if err != nil {
         fmt.Fprintf(os.Stderr, "error calculating cost: %v\n", err)
@@ -389,18 +409,191 @@ func recipeCost(args []string) {
     fmt.Println("-----------------------------------")
     fmt.Printf("Total Cost:          %.2f\n", total)
 
-    if yield > 0 && unit != "" {
-        fmt.Printf("Yield:               %.2f %s\n", yield, unit)
-        fmt.Printf("Cost per %s:         %.4f\n", unit, perUnit)
-    }
+    fmt.Printf("Yield:               %.2f %s\n", yield, unit)
+    fmt.Printf("Cost per %s:         %.4f\n", unit, perYield)
 
-    if secYield > 0 && secUnit != "" {
+    if secUnit != "" && secYield > 0 && perSecYield.Valid {
         fmt.Printf("Secondary Yield:     %.2f %s\n", secYield, secUnit)
-        if perSecUnit.Valid {
-            fmt.Printf("Cost per %s:         %.4f\n", secUnit, perSecUnit.Float64)
-        }
+        fmt.Printf("Cost per %s:         %.4f\n", secUnit, perSecYield.Float64)
     }
 
     fmt.Println()
 }
+// func recipeCost end 
 
+
+// helper func findRecipeByName
+
+func findRecipeByName(db *sql.DB, input string) (int, string, error) {
+    name := strings.TrimSpace(input)
+
+    // 1) exact, case-sensitive
+    var id int
+    err := db.QueryRow(`SELECT id, name FROM recipes WHERE name = ?`, name).Scan(&id, &name)
+    if err == nil {
+        return id, name, nil
+    }
+
+    // 2) exact, case-insensitive
+    err = db.QueryRow(`SELECT id, name FROM recipes WHERE LOWER(name) = LOWER(?)`, name).Scan(&id, &name)
+    if err == nil {
+        return id, name, nil
+    }
+
+    // 3) fuzzy: contains (case-insensitive)
+    rows, err := db.Query(`
+        SELECT id, name
+        FROM recipes
+        WHERE LOWER(name) LIKE '%' || LOWER(?) || '%'
+        ORDER BY name
+        LIMIT 10;
+    `, name)
+    if err != nil {
+        return 0, "", err
+    }
+    defer rows.Close()
+
+    var matches []struct {
+        ID   int
+        Name string
+    }
+
+    for rows.Next() {
+        var mid int
+        var mname string
+        rows.Scan(&mid, &mname)
+        matches = append(matches, struct {
+            ID   int
+            Name string
+        }{mid, mname})
+    }
+
+    if len(matches) == 0 {
+        return 0, "", sql.ErrNoRows
+    }
+    if len(matches) == 1 {
+        return matches[0].ID, matches[0].Name, nil
+    }
+
+    fmt.Println("Multiple recipes match:")
+    for i, m := range matches {
+        fmt.Printf("  %d) %s\n", i+1, m.Name)
+    }
+    fmt.Print("Choose number or press Enter to cancel: ")
+
+    var choiceStr string
+    fmt.Scanln(&choiceStr)
+    if choiceStr == "" {
+        return 0, "", fmt.Errorf("cancelled")
+    }
+
+    choice, convErr := strconv.Atoi(choiceStr)
+    if convErr != nil || choice < 1 || choice > len(matches) {
+        return 0, "", fmt.Errorf("invalid choice")
+    }
+
+    return matches[choice-1].ID, matches[choice-1].Name, nil
+}
+
+// ------------------------------------------------------------
+// RECIPE SCALE — flexible argument order (fully fixed)
+// ------------------------------------------------------------
+
+func recipeScale(args []string) {
+    if len(args) == 0 {
+        fmt.Println("usage: chefops recipe scale NAME --qty X --unit UNIT")
+        os.Exit(1)
+    }
+
+    // 1) Extract recipe name first (all tokens until first --flag)
+    recipeParts := []string{}
+    flagStart := -1
+
+    for i, a := range args {
+        if strings.HasPrefix(a, "--") {
+            flagStart = i
+            break
+        }
+        recipeParts = append(recipeParts, a)
+    }
+
+    // Safety: if no flags detected → error
+    if flagStart == -1 {
+        fmt.Println("qty and unit required")
+        os.Exit(1)
+    }
+
+    recipeNameInput := strings.Join(recipeParts, " ")
+
+    // 2) Parse flags AFTER the recipe name
+    fs := flag.NewFlagSet("recipe scale", flag.ExitOnError)
+    qty := fs.Float64("qty", 0, "target yield quantity")
+    unit := fs.String("unit", "", "target yield unit")
+    fs.Parse(args[flagStart:])
+
+    if *qty <= 0 || *unit == "" {
+        fmt.Println("qty and unit required")
+        os.Exit(1)
+    }
+
+    db, _ := internal.OpenDB()
+    defer db.Close()
+
+    recipeID, recipeName, err := findRecipeByName(db, recipeNameInput)
+    if err != nil {
+        fmt.Println("recipe not found:", recipeNameInput)
+        os.Exit(1)
+    }
+
+    // Fetch base yield
+    var baseQty float64
+    var baseUnit string
+    err = db.QueryRow(`
+        SELECT yield_qty, yield_unit
+        FROM recipes WHERE id = ?
+    `, recipeID).Scan(&baseQty, &baseUnit)
+    if err != nil {
+        fmt.Println("error loading base yield:", err)
+        os.Exit(1)
+    }
+
+    factor := *qty / baseQty
+
+    // UI
+    fmt.Printf("\n📐 Scale Recipe: %s\n", recipeName)
+    fmt.Println("--------------------------------------")
+    fmt.Printf("Original Yield: %.3f %s\n", baseQty, baseUnit)
+    fmt.Printf("Target Yield:   %.3f %s\n", *qty, *unit)
+    fmt.Printf("Scale Factor:   %.3f\n\n", factor)
+
+    // Query expanded lines
+    rows, err := db.Query(`
+        SELECT item_type, ingredient_name, qty, unit
+        FROM recipe_items_expanded_detail
+        WHERE recipe_id = ?
+        ORDER BY item_type, ingredient_name
+    `, recipeID)
+
+    if err != nil {
+        fmt.Println("error loading recipe:", err)
+        os.Exit(1)
+    }
+    defer rows.Close()
+
+    fmt.Printf("| %-10s | %-20s | %-10s | %-6s |\n", "Type", "Name", "New Qty", "Unit")
+    fmt.Println("|------------|----------------------|------------|--------|")
+
+    for rows.Next() {
+        var itemType, name, u string
+        var q float64
+        if err := rows.Scan(&itemType, &name, &q, &u); err != nil {
+            fmt.Println("scan error:", err)
+            os.Exit(1)
+        }
+
+        fmt.Printf("| %-10s | %-20s | %-10.3f | %-6s |\n",
+            itemType, name, q*factor, u)
+    }
+
+    fmt.Println()
+}

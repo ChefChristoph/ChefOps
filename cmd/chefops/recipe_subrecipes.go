@@ -13,58 +13,77 @@ import (
 // ADD SUBRECIPE
 // ----------------------------------------------------------------------
 func recipeAddSubrecipe(args []string) {
-	fs := flag.NewFlagSet("recipe add-subrecipe", flag.ExitOnError)
-	recipeName := fs.String("recipe", "", "parent recipe")
-	subName := fs.String("sub", "", "subrecipe name")
-	qty := fs.Float64("qty", 0, "quantity of subrecipe used")
-	unit := fs.String("unit", "", "unit (kg, g, piece, etc.)")
-	fs.Parse(args)
+    fs := flag.NewFlagSet("recipe add-subrecipe", flag.ExitOnError)
+    recipeName := fs.String("recipe", "", "parent recipe")
+    subName := fs.String("sub", "", "subrecipe name")
+    qty := fs.Float64("qty", 0, "quantity of subrecipe used")
+    unit := fs.String("unit", "", "unit (optional; defaults to parent recipe unit)")
+    fs.Parse(args)
 
-	if *recipeName == "" || *subName == "" || *qty <= 0 || *unit == "" {
-		fmt.Println("usage: --recipe NAME --sub NAME --qty X --unit unit")
-		os.Exit(1)
-	}
+    if *recipeName == "" || *subName == "" || *qty <= 0 {
+        fmt.Println("usage: --recipe NAME --sub NAME --qty X [--unit unit]")
+        os.Exit(1)
+    }
 
-	db, _ := internal.OpenDB()
-	defer db.Close()
+    db, _ := internal.OpenDB()
+    defer db.Close()
 
-	// Parent recipe
-	var recipeID int
-	err := db.QueryRow(`SELECT id FROM recipes WHERE name = ?`, *recipeName).Scan(&recipeID)
-	if err != nil {
-		fmt.Println("recipe not found:", *recipeName)
-		os.Exit(1)
-	}
+    // ---------------------------------------------------------
+    // Look up parent recipe and default unit
+    // ---------------------------------------------------------
+    var recipeID int
+    var parentUnit string
 
-	// Subrecipe
-	var subID int
-	err = db.QueryRow(`SELECT id FROM recipes WHERE name = ?`, *subName).Scan(&subID)
-	if err != nil {
-		fmt.Println("subrecipe not found:", *subName)
-		os.Exit(1)
-	}
+    err := db.QueryRow(`
+        SELECT id, yield_unit
+        FROM recipes
+        WHERE name = ?
+    `, *recipeName).Scan(&recipeID, &parentUnit)
 
-	// Prevent self-reference
-	if recipeID == subID {
-		fmt.Println("A recipe cannot reference itself.")
-		os.Exit(1)
-	}
+    if err != nil {
+        fmt.Println("recipe not found:", *recipeName)
+        os.Exit(1)
+    }
 
-	// Insert
-	_, err = db.Exec(`
-		INSERT INTO recipe_subrecipes (recipe_id, subrecipe_id, qty, unit)
-		VALUES (?, ?, ?, ?)
-	`, recipeID, subID, *qty, *unit)
+    // ---------------------------------------------------------
+    // Subrecipe lookup
+    // ---------------------------------------------------------
+    var subID int
+    err = db.QueryRow(`SELECT id FROM recipes WHERE name = ?`, *subName).Scan(&subID)
+    if err != nil {
+        fmt.Println("subrecipe not found:", *subName)
+        os.Exit(1)
+    }
 
-	if err != nil {
-		fmt.Println("error adding subrecipe:", err)
-		os.Exit(1)
-	}
+    if recipeID == subID {
+        fmt.Println("A recipe cannot reference itself.")
+        os.Exit(1)
+    }
 
-	fmt.Printf("Added subrecipe %s (%.3f %s) to %s\n",
-		*subName, *qty, *unit, *recipeName)
+    // ---------------------------------------------------------
+    // Select effective unit (explicit > inherited)
+    // ---------------------------------------------------------
+    effectiveUnit := parentUnit
+    if *unit != "" {
+        effectiveUnit = *unit
+    }
+
+    // ---------------------------------------------------------
+    // Insert
+    // ---------------------------------------------------------
+    _, err = db.Exec(`
+        INSERT INTO recipe_subrecipes (recipe_id, subrecipe_id, qty, unit)
+        VALUES (?, ?, ?, ?)
+    `, recipeID, subID, *qty, effectiveUnit)
+
+    if err != nil {
+        fmt.Println("error adding subrecipe:", err)
+        os.Exit(1)
+    }
+
+    fmt.Printf("Added subrecipe %s (%.3f %s) to %s\n",
+        *subName, *qty, effectiveUnit, *recipeName)
 }
-
 // ----------------------------------------------------------------------
 // REMOVE SUBRECIPE
 // ----------------------------------------------------------------------
