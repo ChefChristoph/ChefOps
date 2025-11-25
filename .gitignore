@@ -3,18 +3,25 @@
 
 # build artifacts
 chefops
-
-# Go build output
 *.exe
-*.bin
 *.out
+*.bin
 
-# forecast outputs
-# (we include them, so DO NOT ignore CSV)
-# forecasts/*.csv  <-- removed
+# Go
+/go.sum
+/go.sum.tmp
+*.test
 
-# shell scripts
-# *.sh  <-- removed; we want them tracked
-
-# logs
+# Logs
 *.log
+
+# Local data / temp files
+db/*.db
+db/backups/
+tmp/
+scratch/
+
+# Editor files
+*.swp
+*.swo
+*~
