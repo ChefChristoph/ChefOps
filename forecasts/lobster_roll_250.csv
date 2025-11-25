@@ -1,0 +1,27 @@
+# Dishes
+Dish,Portions,Base yield,Scale factor
+DISH Lobster Roll,250.000,1.000 portion,250.000
+
+# Ingredients (aggregated)
+Ingredient,Unit,Total Qty,Unit Cost,Total Cost
+Beer,liter,14.000,9.00,126.00
+Brioche Bun,piece,250.000,2.00,500.00
+Chives,kg,5.940,65.00,386.10
+Cornstarch,kg,3.150,6.00,18.90
+Dijon Mustard,kg,6.728,16.00,107.64
+Flour,kg,15.750,4.00,63.00
+Garlic,kg,1.155,6.00,6.93
+Garlic Powder,kg,0.070,22.00,1.54
+Lemon Juice,liter,10.665,8.00,85.32
+Lemon Zest,kg,0.787,25.00,19.69
+Lobster Meat,kg,90.000,379.00,34110.00
+Mayonnaise,kg,44.625,12.00,535.50
+Onion Powder,kg,0.070,22.00,1.54
+Pepper,kg,0.767,32.00,24.56
+Salt,kg,1.502,2.00,3.00
+
+"# Subrecipes (aggregated, for bulk prep)"
+Subrecipe,Unit,Total Qty
+BULK Batter,portion,5.000
+BULK Citrus Aioli,portion,7.500
+BULK Lobster Salad,portion,30.000

@@ -32,7 +32,7 @@ func usage() {
     fmt.Println("  chefops recipe show \"BULK Batter\"")
     fmt.Println("  chefops recipe cost \"DISH Turbo Hammour Popcorn\"")
     fmt.Println("  chefops recipe scale \"BULK Batter\" --qty 8 --unit kg")
-    fmt.Println("  chefops forecast \"DISH Pole Position Burger\" --portions 120")
+	  fmt.Println("  chefops forecast         --out FILE.csv \"DISH Name=PORTIONS\" ...")
 
 	os.Exit(1)
 }

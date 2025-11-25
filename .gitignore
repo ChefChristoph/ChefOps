@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# build artifacts
+chefops
+
+# Go build output
+*.exe
+*.bin
+*.out
+
+# forecast outputs
+# (we include them, so DO NOT ignore CSV)
+# forecasts/*.csv  <-- removed
+
+# shell scripts
+# *.sh  <-- removed; we want them tracked
+
+# logs
+*.log

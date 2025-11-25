@@ -1,0 +1,38 @@
+# Dishes
+Dish,Portions,Base yield,Scale factor
+DISH Pole Position Burger,300.000,1.000 portion,300.000
+
+# Ingredients (aggregated)
+Ingredient,Unit,Total Qty,Unit Cost,Total Cost
+Apple Cider Vinegar,liter,17.550,10.00,175.50
+Beef Patty,kg,54.000,32.00,1728.00
+Burger Bun,piece,300.000,1.50,450.00
+Butter,kg,11.520,22.00,253.44
+Cheddar Cheese,kg,34.800,26.00,904.80
+Chives,kg,2.340,65.00,152.10
+Dijon Mustard,kg,16.740,16.00,267.84
+Extra Virgin Olive Oil,liter,11.700,22.00,257.40
+Flour,kg,5.760,4.00,23.04
+Garlic,kg,0.720,6.00,4.32
+Gherkin Brine,liter,11.700,5.00,58.50
+Ketchup,kg,14.400,6.00,86.40
+Mayonnaise,kg,136.800,12.00,1641.60
+Milk,kg,43.200,4.00,172.80
+Onion,kg,62.700,3.00,188.10
+Parsley,kg,2.340,38.00,88.92
+Pasta,kg,57.600,6.00,345.60
+Pepper,kg,1.449,32.00,46.37
+Pickles,kg,56.400,10.00,564.00
+Potatoes,kg,351.000,3.50,1228.50
+Salt,kg,4.374,2.00,8.75
+Sugar,kg,3.600,3.00,10.80
+Tomato,kg,19.800,5.00,99.00
+Vegetable Stock,liter,23.400,7.00,163.80
+Vinegar,liter,2.880,4.00,11.52
+
+"# Subrecipes (aggregated, for bulk prep)"
+Subrecipe,Unit,Total Qty
+BULK Burger Sauce,portion,9.000
+BULK Potato Salad,portion,45.000
+BULK Tomato Onion Jam,portion,6.000
+SUB Mac And Cheese Base,portion,18.000

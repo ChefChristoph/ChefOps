@@ -1,0 +1,24 @@
+# Dishes
+Dish,Portions,Base yield,Scale factor
+"DISH Full Throttle Lobster, Mac And Cheese Croquette",400.000,1.000 portion,400.000
+
+# Ingredients (aggregated)
+Ingredient,Unit,Total Qty,Unit Cost,Total Cost
+Apple Cider Vinegar,liter,16.000,10.00,160.00
+Bay Leaves,kg,0.064,38.00,2.43
+Chives,kg,132.480,65.00,8611.20
+Lemon,kg,20.000,7.00,140.00
+Lemon Zest,kg,132.480,25.00,3312.00
+Lobster Meat,kg,1374.480,379.00,520927.92
+Mustard Seeds,kg,9.600,16.00,153.60
+Pepper,kg,16.720,32.00,535.04
+Potato Chips,kg,48.000,16.00,768.00
+Salt,kg,17.200,2.00,34.40
+Shallots,kg,1.600,14.00,22.40
+Sugar,kg,4.800,3.00,14.40
+Water,liter,48.000,0.10,4.80
+
+"# Subrecipes (aggregated, for bulk prep)"
+Subrecipe,Unit,Total Qty
+BULK Lobster Mac And Cheese,portion,120.000
+BULK Pickled Mustard Seeds,portion,4.000

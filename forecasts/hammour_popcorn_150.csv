@@ -1,0 +1,33 @@
+# Dishes
+Dish,Portions,Base yield,Scale factor
+DISH Turbo Hammour Popcorn,150.000,1.000 portion,150.000
+
+# Ingredients (aggregated)
+Ingredient,Unit,Total Qty,Unit Cost,Total Cost
+Apple Cider Vinegar,liter,6.000,10.00,60.00
+Bay Leaves,kg,0.024,38.00,0.91
+Beer,liter,42.000,9.00,378.00
+Cornstarch,kg,9.450,6.00,56.70
+Dijon Mustard,kg,0.473,16.00,7.56
+Flour,kg,47.250,4.00,189.00
+Garlic,kg,0.693,6.00,4.16
+Garlic Powder,kg,0.330,22.00,7.26
+Hammour,kg,22.500,38.00,855.00
+Lemon,kg,7.500,7.00,52.50
+Lemon Juice,liter,2.835,8.00,22.68
+Lemon Zest,kg,1.552,25.00,38.81
+Mayonnaise,kg,26.775,12.00,321.30
+Mustard Seeds,kg,3.600,16.00,57.60
+Onion Powder,kg,0.210,22.00,4.62
+Pepper,kg,2.164,32.00,69.26
+Salt,kg,5.498,2.00,11.00
+Shallots,kg,0.600,14.00,8.40
+Sugar,kg,1.800,3.00,5.40
+Water,liter,18.000,0.10,1.80
+
+"# Subrecipes (aggregated, for bulk prep)"
+Subrecipe,Unit,Total Qty
+BULK Batter,portion,15.000
+BULK Citrus Aioli,portion,4.500
+BULK Lemon Pepper Seasoning,portion,1.500
+BULK Pickled Mustard Seeds,portion,1.500
