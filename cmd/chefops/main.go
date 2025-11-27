@@ -9,30 +9,37 @@ import (
 
 	"github.com/ChefChristoph/chefops/internal"
 )
+
 func usage() {
-	    fmt.Println("ChefOps CLI")
-    fmt.Println("")
-    fmt.Println("Usage:")
-    fmt.Println("  chefops ingredient add        --name NAME --unit UNIT --cost COST")
-    fmt.Println("  chefops ingredient list")
-    fmt.Println("")
-    fmt.Println("  chefops recipe new            --name NAME --yield QTY --unit UNIT [--syield QTY --sunit UNIT]")
-    fmt.Println("  chefops recipe list")
-    fmt.Println("  chefops recipe show           \"RECIPE NAME\"")
-    fmt.Println("  chefops recipe cost           \"RECIPE NAME\"")
-    fmt.Println("  chefops recipe add-item       --recipe NAME --ingredient NAME --qty QTY")
-    fmt.Println("  chefops recipe add-subrecipe  --recipe NAME --sub NAME --qty QTY --unit UNIT")
-    fmt.Println("  chefops recipe scale          \"RECIPE NAME\" --qty QTY --unit UNIT")
-    fmt.Println("")
-    fmt.Println("  chefops forecast              \"DISH NAME\" --portions N")
-    fmt.Println("")
-    fmt.Println("  chefops marketlist")
-    fmt.Println("")
-    fmt.Println("Examples:")
-    fmt.Println("  chefops recipe show \"BULK Batter\"")
-    fmt.Println("  chefops recipe cost \"DISH Turbo Hammour Popcorn\"")
-    fmt.Println("  chefops recipe scale \"BULK Batter\" --qty 8 --unit kg")
-	  fmt.Println("  chefops forecast         --out FILE.csv \"DISH Name=PORTIONS\" ...")
+	fmt.Println("ChefOps CLI")
+	fmt.Println("")
+	fmt.Println("Usage:")
+	fmt.Println("  chefops ingredient add        --name NAME --unit UNIT --cost COST")
+	fmt.Println("  chefops ingredient list")
+	fmt.Println("")
+	fmt.Println("  chefops recipe new            --name NAME --yield QTY --unit UNIT [--syield QTY --sunit UNIT]")
+	fmt.Println("  chefops recipe list")
+	fmt.Println("  chefops recipe show           \"RECIPE NAME\"")
+	fmt.Println("  chefops recipe cost           \"RECIPE NAME\"")
+	fmt.Println("  chefops recipe add-item       --recipe NAME --ingredient NAME --qty QTY")
+	fmt.Println("  chefops recipe add-subrecipe  --recipe NAME --sub NAME --qty QTY --unit UNIT")
+	fmt.Println("  chefops recipe scale          \"RECIPE NAME\" --qty QTY --unit UNIT")
+	fmt.Println("  chefops recipe set-meta       \"RECIPE NAME\" FILEPATH")
+	fmt.Println("  chefops recipe export-meta    \"RECIPE NAME\" [--format=json|md]")
+	fmt.Println("  chefops recipe note import   --recipe \"NAME\" --file path/to/file.md")
+	fmt.Println("  chefops recipe note show     \"RECIPE NAME\"")
+	fmt.Println("")
+	fmt.Println("  chefops forecast              \"DISH NAME\" --portions N")
+	fmt.Println("")
+	fmt.Println("  chefops marketlist")
+	fmt.Println("")
+	fmt.Println("Examples:")
+	fmt.Println("  chefops recipe show \"BULK Batter\"")
+	fmt.Println("  chefops recipe cost \"DISH Turbo Hammour Popcorn\"")
+	fmt.Println("  chefops recipe scale \"BULK Batter\" --qty 8 --unit kg")
+	fmt.Println("  chefops recipe set-meta \"Pizza Margherita\" recipe_meta/pizza.md")
+	fmt.Println("  chefops recipe export-meta \"Pizza Margherita\" --format md")
+	fmt.Println("  chefops forecast         --out FILE.csv \"DISH Name=PORTIONS\" ...")
 
 	os.Exit(1)
 }
@@ -59,7 +66,7 @@ func main() {
 		case "find":
 			ingredientFind(os.Args[3:])
 		case "convert":
-		 ingredientConversionCommand(os.Args[3:])
+			ingredientConversionCommand(os.Args[3:])
 		default:
 			usage()
 		}
@@ -83,30 +90,36 @@ func main() {
 		case "cost":
 			recipeCost(os.Args[3:])
 		case "remove-item":
-      recipeRemoveItem(os.Args[3:])
+			recipeRemoveItem(os.Args[3:])
 		case "add-subrecipe":
-    recipeAddSubrecipe(os.Args[3:])
-case "remove-subrecipe":
-    recipeRemoveSubrecipe(os.Args[3:])
+			recipeAddSubrecipe(os.Args[3:])
+		case "remove-subrecipe":
+			recipeRemoveSubrecipe(os.Args[3:])
 		case "scale":
-    recipeScale(os.Args[3:])
+			recipeScale(os.Args[3:])
+		case "set-meta":
+			handleSetMetadata(os.Args[3:])
+		case "export-meta":
+			handleExportMetadata(os.Args[3:])
+		case "note":
+			recipeNoteCommand(os.Args[3:])
 		default:
 			usage()
 		}
-  // FORECAST COMMANDS
+		// FORECAST COMMANDS
 	case "forecast":
-    forecastCommand(os.Args[2:])
+		forecastCommand(os.Args[2:])
 	// -------------------------
-  // MARKETLIST COMMANDS
+	// MARKETLIST COMMANDS
 	// -------------------------
 	case "marketlist":
-	marketlist(os.Args[2:])
+		marketlist(os.Args[2:])
 
-  // -------------------------
-  // export COMMANDS
+		// -------------------------
+		// export COMMANDS
 	// -------------------------
 	case "export":
-	 exportCommand(os.Args[2:])
+		exportCommand(os.Args[2:])
 
 	// -------------------------
 	// UNKNOWN TOP-LEVEL COMMAND
